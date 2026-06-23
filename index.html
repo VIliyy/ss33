@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>三三复制</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e8e8e8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="三三复制">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<style>
+:root{
+  --ease:cubic-bezier(0.65,0.05,0.36,1);
+  --bg:#e8e8e8;
+  --card:#e8e8e8;
+  --shadow1:#bebebe;
+  --shadow2:#ffffff;
+  --text:#444;
+  --muted:#999;
+  --accent:#ff9800;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);
+  height:100dvh;display:flex;flex-direction:column;
+  overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;-webkit-user-select:none;
+}
+
+/* ===== Top Bar ===== */
+.top{
+  background:var(--bg);
+  padding:10px 14px;display:flex;align-items:center;gap:10px;
+  flex-shrink:0;z-index:10;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+.top h1{font-size:17px;font-weight:700;color:var(--text);letter-spacing:1px}
+.top h1 span{color:var(--accent);font-size:13px;font-weight:400;margin-left:4px}
+
+/* ===== Neumorphism Buttons ===== */
+.nbtn{
+  height:34px;padding:0 14px;border:none;border-radius:10px;
+  background:var(--bg);
+  box-shadow:4px 4px 8px var(--shadow1),-4px -4px 8px var(--shadow2);
+  color:var(--text);font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .25s var(--ease);
+  display:flex;align-items:center;gap:4px;white-space:nowrap;
+}
+.nbtn:active{
+  box-shadow:inset 3px 3px 6px var(--shadow1),inset -3px -3px 6px var(--shadow2);
+  transform:scale(.96);
+}
+.nbtn.on{
+  background:var(--accent);color:#fff;
+  box-shadow:4px 4px 8px rgba(255,152,0,.3),-4px -4px 8px rgba(255,255,255,.5);
+}
+.nbtn.sm{height:28px;padding:0 10px;font-size:11px;border-radius:8px}
+.nbtn.export{height:28px;padding:0 10px;font-size:10px;border-radius:8px}
+
+/* ===== Toggle Switch (Uiverse.io inspired) ===== */
+.tgl-w{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  position:relative;margin-left:auto;
+}
+/* From Uiverse.io by Praashoo7 - adapted */
+.switch{
+  font-size:14px;position:relative;display:inline-block;
+  width:3.5em;height:2em;
+}
+.switch input{opacity:0;width:0;height:0}
+.slider{
+  position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+  background-color:#ccc;
+  box-shadow:inset 2px 5px 10px rgba(0,0,0,.3);
+  transition:all .4s var(--ease);border-radius:5px;
+}
+.slider:before{
+  position:absolute;content:"";
+  height:1.4em;width:.12em;border-radius:0;
+  left:.35em;bottom:.3em;
+  background-color:#fff;
+  transition:all .4s var(--ease);
+}
+input:checked+.slider{
+  background-color:#4caf50;
+  box-shadow:inset 2px 5px 10px rgba(0,0,0,.4);
+}
+input:checked+.slider:before{
+  transform:translateX(2.7em) rotate(360deg);
+}
+.tgl-txt{
+  font-size:9px;font-weight:600;color:var(--muted);
+  user-select:none;-webkit-user-select:none;
+  white-space:nowrap;line-height:1;
+}
+
+/* ===== Parameter Panel ===== */
+.pp{
+  background:var(--bg);border-bottom:1px solid rgba(0,0,0,.04);
+  overflow:hidden;max-height:0;transition:max-height .35s var(--ease);
+  box-shadow:0 2px 8px rgba(0,0,0,.04);
+}
+.pp.open{max-height:300px}
+.ppi{
+  padding:10px 14px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;
+}
+.ppi label{font-size:9px;color:var(--muted);display:block;margin-bottom:2px}
+.ppi input{
+  height:30px;border:none;border-radius:8px;padding:0 8px;font-size:11px;
+  background:var(--bg);color:var(--text);text-align:center;
+  box-shadow:inset 2px 2px 5px var(--shadow1),inset -2px -2px 5px var(--shadow2);
+  outline:none;transition:box-shadow .2s;
+}
+.ppi input:focus{box-shadow:inset 1px 1px 3px var(--shadow1),inset -1px -1px 3px var(--shadow2)}
+.ppi input.wd{width:160px;text-align:left}
+.ppi input.sm{width:50px}
+.sep{width:100%;height:1px;background:transparent;margin:2px 0}
+.ppi .nb-row{display:flex;gap:6px;align-items:flex-end}
+
+/* ===== Scroll Area ===== */
+.bd{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg);padding:4px 0 30px}
+
+/* ===== Level Section ===== */
+.lv{margin:8px 10px 4px}
+.lvh{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;padding:0 4px}
+.lvh .n{font-size:13px;font-weight:700;color:var(--text)}
+.lvh .d{font-size:10px;color:var(--muted)}
+.lvh .lbar{flex:1;height:2px;border-radius:1px;background:var(--shadow1);opacity:.5}
+
+.l1r{display:flex;justify-content:center;padding:4px 0}
+.lsr{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;padding:4px 0}
+.lsr::-webkit-scrollbar{height:4px}
+.lsr::-webkit-scrollbar-thumb{background:var(--shadow1);border-radius:4px}
+.lsr::-webkit-scrollbar-track{background:transparent}
+.lrw{display:flex;gap:0;white-space:nowrap;padding:0 6px}
+.grp{display:flex;gap:8px;flex-shrink:0;margin-right:20px}
+.grp:last-child{margin-right:0}
+
+/* ===== Neumorphism Card ===== */
+.cd{
+  width:80px;min-width:80px;
+  background:var(--card);
+  border-radius:14px;padding:10px 4px 8px;text-align:center;
+  box-shadow:5px 5px 12px var(--shadow1),-5px -5px 12px var(--shadow2);
+  cursor:pointer;flex-shrink:0;
+  transition:all .3s var(--ease);
+  content-visibility:auto;contain-intrinsic-size:80px 100px;
+  border:1px solid transparent;
+}
+.cd:active{box-shadow:inset 4px 4px 8px var(--shadow1),inset -4px -4px 8px var(--shadow2);transform:scale(.94)}
+.cd .av{
+  width:38px;height:38px;border-radius:50%;margin:0 auto 5px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:15px;
+  background:linear-gradient(145deg,#f0f0f0,#cacaca);
+  box-shadow:4px 4px 8px #bebebe,-4px -4px 8px #ffffff;
+  transition:all .3s var(--ease);
+}
+.cd .nm{
+  font-size:10px;font-weight:600;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  max-width:68px;margin:0 auto;
+}
+.cd .ph{
+  font-size:8px;color:var(--muted);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  max-width:68px;margin:0 auto;
+}
+.cd .tg{
+  font-size:7px;color:#fff;border-radius:4px;padding:1px 6px;display:inline-block;
+  margin-top:3px;font-weight:600;letter-spacing:.3px;
+}
+.cd.sel{
+  background:var(--bg);border-color:var(--accent);
+  box-shadow:0 0 0 2px var(--accent),6px 6px 14px var(--shadow1),-6px -6px 14px var(--shadow2);
+  transform:scale(1.05);
+}
+.cd.edt:not(.emp){
+  box-shadow:5px 5px 12px var(--shadow1),-5px -5px 12px var(--shadow2);
+  animation:br .8s linear infinite;
+  border:1px solid transparent;
+}
+@keyframes br{50%{border-color:#e94560;box-shadow:5px 5px 12px var(--shadow1),-5px -5px 12px var(--shadow2),0 0 0 2px rgba(233,69,96,.15)}}
+.cd.emp{
+  box-shadow:2px 2px 5px var(--shadow1),-2px -2px 5px var(--shadow2);
+  cursor:default;opacity:.5;
+}
+.cd.emp .av{background:linear-gradient(145deg,#e2e2e2,#d0d0d0);color:#bbb}
+.cd.emp .nm{color:#bbb}.cd.emp .tg{background:#ccc}
+
+/* Dim for ancestor highlight */
+.cd.dim,.cd.dim .av,.cd.dim .nm,.cd.dim .tg,.cd.dim .ph{filter:grayscale(100%);opacity:.35}
+.cd.dim{box-shadow:1px 1px 3px var(--shadow1),-1px -1px 3px var(--shadow2)!important}
+.cd.sel.dim,.cd.sel.dim .av,.cd.sel.dim .nm,.cd.sel.dim .tg{filter:none;opacity:1}
+.cd.anc.dim,.cd.anc.dim .av,.cd.anc.dim .nm,.cd.anc.dim .tg{filter:none;opacity:.85}
+.cd.anc{box-shadow:0 0 0 2px rgba(255,152,0,.3),5px 5px 12px var(--shadow1),-5px -5px 12px var(--shadow2)}
+
+/* Level colors for text + tag */
+.l1 .av{color:#e65100}.l1 .tg{background:#e65100}
+.l2 .av{color:#2e7d32}.l2 .tg{background:#2e7d32}
+.l3 .av{color:#1565c0}.l3 .tg{background:#1565c0}
+.l4 .av{color:#c62828}.l4 .tg{background:#c62828}
+.l5 .av{color:#6a1b9a}.l5 .tg{background:#6a1b9a}
+.l6 .av{color:#00695c}.l6 .tg{background:#00695c}
+
+/* ===== Modal ===== */
+.mo{
+  position:fixed;inset:0;z-index:300;
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity .3s var(--ease);
+  background:rgba(0,0,0,.35);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+}
+.mo.show{opacity:1;pointer-events:auto}
+.ms{
+  background:var(--bg);width:100%;max-width:480px;
+  border-radius:20px 20px 0 0;padding:20px 18px 28px;
+  transform:translateY(100%);
+  transition:transform .4s var(--ease);
+  box-shadow:0 -4px 20px rgba(0,0,0,.1);
+}
+.mo.show .ms{transform:translateY(0)}
+.ms h3{font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px;text-align:center}
+.ms label{font-size:10px;font-weight:600;color:var(--muted);display:block;margin:10px 0 4px}
+.ms input{
+  width:100%;height:36px;border:none;border-radius:10px;padding:0 10px;font-size:13px;
+  background:var(--bg);color:var(--text);
+  box-shadow:inset 3px 3px 6px var(--shadow1),inset -3px -3px 6px var(--shadow2);
+  outline:none;transition:box-shadow .2s;
+}
+.ms input:focus{box-shadow:inset 1px 1px 3px var(--shadow1),inset -1px -1px 3px var(--shadow2)}
+.ms .ba{display:flex;gap:10px;margin-top:16px}
+.ms .ba button{flex:1;height:38px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .25s var(--ease)}
+.ms .ba .b1{background:var(--bg);color:var(--text);box-shadow:4px 4px 8px var(--shadow1),-4px -4px 8px var(--shadow2)}
+.ms .ba .b1:active{box-shadow:inset 3px 3px 6px var(--shadow1),inset -3px -3px 6px var(--shadow2)}
+.ms .ba .b2{background:var(--accent);color:#fff;box-shadow:4px 4px 8px rgba(255,152,0,.3),-4px -4px 8px var(--shadow2)}
+.ms .ba .b2:active{box-shadow:inset 3px 3px 6px rgba(255,152,0,.3),inset -3px -3px 6px rgba(255,255,255,.3)}
+
+/* ===== Install Banner ===== */
+.ib{position:fixed;bottom:0;left:0;right:0;background:#333;color:#fff;padding:10px 14px;display:none;align-items:center;gap:8px;z-index:200;font-size:11px}
+.ib.show{display:flex}
+.ib button{height:28px;padding:0 10px;border-radius:8px;border:none;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap}
+.ib .ib-y{background:var(--accent);color:#fff}
+.ib .ib-n{background:rgba(255,255,255,.15);color:#fff}
+</style>
+</head>
+<body>
+<div class="top">
+<h1>三三复制</h1>
+<button class="nbtn" onclick="tp()">&#9881; 参数</button>
+
+<!-- Toggle Switch -->
+<div class="tgl-w" style="margin-left:auto">
+<label class="switch">
+<input type="checkbox" id="tgl-sw" onchange="tl()">
+<span class="slider"></span>
+</label>
+<span class="tgl-txt" id="tgl-txt">编辑</span>
+</div>
+</div>
+
+<div class="pp" id="pp">
+<div class="ppi">
+<label>显示层级</label>
+<div class="nb-row">
+<button class="nbtn sm" id="b3" onclick="sl(3)">3层</button>
+<button class="nbtn sm on" id="b10" onclick="sl(10)">10层</button>
+<button class="nbtn sm" id="b5" onclick="sl(5)">5层</button>
+</div>
+<div class="sep"></div>
+<label>加盟费</label><input class="sm" id="ep" value="299" onchange="sv()">
+<label>报单数</label><input class="sm" id="bx" value="19" onchange="sv()">
+<label>级差(逗号分隔10层)</label><input class="wd" id="jc" value="63,36,36,9,18,18,18,18,9,9" onchange="sv()">
+<label>感恩(逗号分隔10层)</label><input class="wd" id="ds" value="0,0,9,9,9,18,18,18,9,0" onchange="sv()">
+<label>数据</label>
+<div class="nb-row">
+<button class="nbtn sm" style="background:#4caf50;color:#fff" onclick="ex()">导出</button>
+<button class="nbtn sm" style="background:#2196f3;color:#fff" onclick="im()">导入</button>
+</div>
+</div>
+</div>
+
+<div class="bd" id="bd" onclick="unsel(event)"></div>
+
+<div class="mo" id="mo">
+<div class="ms">
+<h3 id="mt">编辑</h3>
+<label>姓名</label><input id="mn" placeholder="请输入姓名">
+<label>手机号</label><input id="mp" placeholder="请输入手机号" type="tel">
+<div class="ba"><button class="b1" onclick="ce()">取消</button><button class="b2" onclick="se()">保存</button></div>
+</div>
+</div>
+
+<div class="ib" id="ib">
+<span>添加到主屏幕，使用更方便</span>
+<button class="ib-n" onclick="clib()">暂不</button>
+<button class="ib-y" id="ib-btn" onclick="ip()">立即安装</button>
+</div>
+
+<script>
+var N=[],M={},S=10,E=null,H=null,L=false;
+var dp=null;
+
+// ===== localStorage =====
+function ld(){
+  try{
+    var raw=localStorage.getItem("ss33_M");
+    if(raw){M=JSON.parse(raw);}
+    var s=localStorage.getItem("ss33_S");
+    if(s){S=parseInt(s)||10;}
+    var ep=localStorage.getItem("ss33_ep");
+    if(ep){document.getElementById("ep").value=ep;}
+    var bx=localStorage.getItem("ss33_bx");
+    if(bx){document.getElementById("bx").value=bx;}
+    var jc=localStorage.getItem("ss33_jc");
+    if(jc){document.getElementById("jc").value=jc;}
+    var ds=localStorage.getItem("ss33_ds");
+    if(ds){document.getElementById("ds").value=ds;}
+    var lk=localStorage.getItem("ss33_L");
+    if(lk!==null){L=lk==="1";}
+  }catch(e){}
+}
+function sv(){
+  try{
+    localStorage.setItem("ss33_M",JSON.stringify(M));
+    localStorage.setItem("ss33_S",S);
+    localStorage.setItem("ss33_ep",document.getElementById("ep").value);
+    localStorage.setItem("ss33_bx",document.getElementById("bx").value);
+    localStorage.setItem("ss33_jc",document.getElementById("jc").value);
+    localStorage.setItem("ss33_ds",document.getElementById("ds").value);
+    localStorage.setItem("ss33_L",L?"1":"0");
+  }catch(e){}
+}
+
+ld();
+
+function ulk(){
+  var cb=document.getElementById("tgl-sw");
+  cb.checked=!L;
+  document.getElementById("tgl-txt").textContent=L?"浏览":"编辑";
+}
+ulk();
+
+function tp(){document.getElementById("pp").classList.toggle("open")}
+function tl(){L=!L;sv();ulk();rb()}
+function sl(n){S=n;sv();document.querySelectorAll(".nbtn.sm").forEach(function(b){b.classList.remove("on")});var b=document.getElementById("b"+n);if(b)b.classList.add("on");rb()}
+
+function gn(){
+  N=[];for(var l=1;l<=10;l++){var c=Math.pow(3,l-1),a=[];for(var i=0;i<c;i++)a.push({id:"L"+l+"-"+i,lv:l,ix:i,pv:l===1?12800:Math.floor(Math.random()*8000+500)});N.push(a)}
+}
+function ap(nd){if(M[nd.id]){nd.nm=M[nd.id].nm;nd.ph=M[nd.id].ph}else if(!nd.nm)nd.nm=nd.lv===1?" ":""+nd.lv+"-"+nd.ix}
+function fn(id){for(var l=0;l<N.length;l++)for(var i=0;i<N[l].length;i++)if(N[l][i].id===id)return N[l][i];return null}
+
+function rb(){
+  gn();var h="";
+  for(var lv=1;lv<=S;lv++){
+    var nodes=N[lv-1],total=nodes.length,groups=[];
+    for(var g=0;g*3<total;g++){
+      var grp=[];for(var i=g*3;i<Math.min(g*3+3,total);i++)grp.push(nodes[i]);
+      while(grp.length<3)grp.push({id:"E-L"+lv+"-"+g+"-"+grp.length,em:true,lv:lv,ix:-1});
+      groups.push(grp);
+    }
+    var desc=lv===1?" ":lv===2?" ":lv===3?" ":" "+lv+" ";
+    h+='<div class="lv"><div class="lvh"><span class="n">'+lv+'</span><span class="lbar"></span><span class="d">'+total+'</span></div>';
+    if(lv===1){
+      ap(groups[0][0]);h+='<div class="l1r">'+cd(groups[0][0],true)+'</div>';
+    } else if(lv===2){
+      h+='<div class="l1r"><div style="display:flex;gap:8px">';
+      for(var c=0;c<3;c++){ap(groups[0][c]);h+=cd(groups[0][c],false)}
+      h+='</div></div>';
+    } else {
+      h+='<div class="lsr"><div class="lrw">';
+      for(var gi=0;gi<groups.length;gi++){
+        h+='<div class="grp">';
+        for(var ci=0;ci<3;ci++){ap(groups[gi][ci]);h+=cd(groups[gi][ci],false)}
+        h+='</div>';
+      }
+      h+='</div></div>';
+    }
+    h+='</div>';
+  }
+  document.getElementById("bd").innerHTML=h;H=null;
+}
+
+function cd(nd,sel){
+  var lc="l"+(Math.min(nd.lv,6));
+  var cs=sel?" sel":"",ce=nd.em?" emp":"",ct=(!L&&!nd.em)?" edt":"";
+  var nm=(nd.nm||(nd.em?" ":"")).slice(0,4),ph=nd.ph||"";
+  var h='<div class="cd '+lc+cs+ce+ct+'" id="nc-'+nd.id+'" data-lv="'+nd.lv+'" data-ix="'+(nd.ix||0)+'" onclick="cc(event,\''+nd.id+'\')">';
+  h+='<div class="av">'+nm.charAt(0)+'</div><div class="nm">'+nm+'</div>';
+  if(ph)h+='<div class="ph">'+ph+'</div>';
+  h+='<div class="tg">Lv.'+nd.lv+'</div></div>';
+  return h;
+}
+
+function cc(ev,id){
+  ev.stopPropagation();
+  var nd=fn(id);if(!nd||nd.em)return;
+  if(!L){oe(nd);return}
+  if(H&&H.id===id){unsel();return}
+  document.querySelectorAll(".cd").forEach(function(el){el.classList.add("dim")});
+  var me=document.getElementById("nc-"+id);if(me){me.classList.remove("dim");me.classList.add("sel")}
+  var ix=nd.ix,lv=nd.lv;
+  while(lv>1){
+    ix=Math.floor(ix/3);lv--;
+    var anc=document.getElementById("nc-L"+lv+"-"+ix);
+    if(anc){anc.classList.remove("dim");anc.classList.add("anc")}
+  }
+  if(nd.lv<S){
+    var cs=nd.ix*3;
+    for(var c=cs;c<Math.min(cs+3,Math.pow(3,nd.lv));c++){
+      var ch=document.getElementById("nc-L"+(nd.lv+1)+"-"+c);
+      if(ch){ch.classList.remove("dim");ch.classList.add("chl")}
+    }
+  }
+  H=nd;
+}
+
+function unsel(ev){
+  if(ev&&ev.target.closest(".cd"))return;
+  document.querySelectorAll(".cd").forEach(function(el){el.classList.remove("dim","sel","anc","chl")});
+  H=null;
+}
+
+function oe(nd){E=nd;document.getElementById("mt").textContent="   "+nd.lv+" ";document.getElementById("mn").value=nd.nm||"";document.getElementById("mp").value=nd.ph||"";document.getElementById("mo").classList.add("show");setTimeout(function(){document.getElementById("mn").focus()},300)}
+function ce(){document.getElementById("mo").classList.remove("show");E=null}
+function se(){
+  if(!E)return;
+  var nm=document.getElementById("mn").value.trim(),ph=document.getElementById("mp").value.trim();
+  if(!nm){alert("    ");return}
+  E.nm=nm;E.ph=ph;M[E.id]={nm:nm,ph:ph};
+  sv();
+  rb();ce();
+}
+document.getElementById("mo").addEventListener("click",function(e){if(e.target===this)ce()});
+
+// ===== 数据导出/导入 =====
+function ex(){
+  var data={};
+  for(var i=0;i<localStorage.length;i++){
+    var k=localStorage.key(i);
+    if(k.indexOf("ss33_")===0) data[k]=localStorage.getItem(k);
+  }
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="三三复制_备份_"+new Date().toISOString().slice(0,10)+".json";
+  a.click();
+}
+function im(){
+  var inp=document.createElement("input");
+  inp.type="file";inp.accept=".json";
+  inp.onchange=function(){
+    var f=inp.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var data=JSON.parse(r.result);
+        for(var k in data) localStorage.setItem(k,data[k]);
+        ld();rb();alert("导入成功！");
+      }catch(e){alert("文件格式错误，请检查")}
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+// ===== PWA =====
+window.addEventListener("beforeinstallprompt",function(e){
+  e.preventDefault();dp=e;
+  document.getElementById("ib").classList.add("show");
+});
+function clib(){document.getElementById("ib").classList.remove("show");dp=null}
+function ip(){
+  if(dp){dp.prompt();dp.userChoice.then(function(){
+    document.getElementById("ib").classList.remove("show");
+    dp=null;
+  })}
+}
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").catch(function(){});
+}
+
+// Init level buttons
+(function(){
+  var b=document.getElementById("b"+S);
+  if(b){
+    document.querySelectorAll(".nbtn.sm").forEach(function(x){x.classList.remove("on")});
+    b.classList.add("on");
+  }
+})();
+
+rb();
+</script>
+</body>
+</html>
