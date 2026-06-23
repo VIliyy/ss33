@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -251,6 +251,25 @@ input:checked+.slider:before{
 .ib button{height:28px;padding:0 10px;border-radius:8px;border:none;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap}
 .ib .ib-y{background:var(--accent);color:#fff}
 .ib .ib-n{background:rgba(255,255,255,.15);color:#fff}
+
+/* ===== Batch Modal ===== */
+.bmgp{background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:10px;box-shadow:inset 2px 2px 5px var(--shadow1),inset -2px -2px 5px var(--shadow2)}
+.bmgph{display:flex;align-items:baseline;gap:6px;margin-bottom:6px}
+.bmgpn{font-size:13px;font-weight:700;color:var(--accent)}
+.bmgpi{font-size:9px;color:var(--muted)}
+.bmta{width:100%;height:72px;border:none;border-radius:8px;padding:8px 10px;font-size:11px;background:var(--bg);color:var(--text);resize:none;box-shadow:inset 3px 3px 6px var(--shadow1),inset -3px -3px 6px var(--shadow2);outline:none;font-family:inherit;line-height:1.6;transition:box-shadow .2s}
+.bmta:focus{box-shadow:inset 1px 1px 3px var(--shadow1),inset -1px -1px 3px var(--shadow2)}
+.bmclr{font-size:10px!important;height:22px!important;padding:0 8px!important}
+.bmlocked{opacity:0.5;background:#d4d4d4!important;pointer-events:none}
+.bmbtnr{display:flex;gap:6px;margin-top:4px}
+.bmlk{font-size:10px!important;height:22px!important;padding:0 8px!important}
+.bmselw{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.bmsel{font-size:10px!important;height:22px!important;padding:0 8px!important}
+.bmnav{display:flex;gap:8px;justify-content:center;align-items:center;margin-bottom:8px}
+.bmnav span{font-size:11px;color:var(--muted)}
+.bmpsel{width:100%;height:30px;border:none;border-radius:8px;padding:0 8px;font-size:11px;background:var(--bg);color:var(--text);box-shadow:inset 2px 2px 5px var(--shadow1),inset -2px -2px 5px var(--shadow2);outline:none;margin-bottom:8px;cursor:pointer}
+.bmhdr{font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.bmhdr b{color:var(--text)}
 </style>
 </head>
 <body>
@@ -272,9 +291,9 @@ input:checked+.slider:before{
 <div class="ppi">
 <label>显示层级</label>
 <div class="nb-row">
-<button class="nbtn sm" id="b3" onclick="sl(3)">3层</button>
-<button class="nbtn sm on" id="b10" onclick="sl(10)">10层</button>
+<button class="nbtn sm on" id="b3" onclick="sl(3)">3层</button>
 <button class="nbtn sm" id="b5" onclick="sl(5)">5层</button>
+<button class="nbtn sm" id="b8" onclick="sl(8)">8层</button>
 </div>
 <div class="sep"></div>
 <label>加盟费</label><input class="sm" id="ep" value="299" onchange="sv()">
@@ -285,6 +304,7 @@ input:checked+.slider:before{
 <div class="nb-row">
 <button class="nbtn sm" style="background:#4caf50;color:#fff" onclick="ex()">导出</button>
 <button class="nbtn sm" style="background:#2196f3;color:#fff" onclick="im()">导入</button>
+<button class="nbtn sm" style="background:#ff9800;color:#fff" onclick="bmo()">批量录入</button>
 </div>
 </div>
 </div>
@@ -300,6 +320,19 @@ input:checked+.slider:before{
 </div>
 </div>
 
+<div class="mo" id="bm">
+<div class="ms" style="max-height:90vh;overflow-y:auto;padding-bottom:16px">
+<h3>批量录入</h3>
+<div id="bml1" style="margin-bottom:4px"></div>
+<div id="bmg"></div>
+<div class="ba" style="position:sticky;bottom:0;background:var(--bg);padding-top:8px;z-index:1">
+<button class="b1" onclick="bmca()">清空全部</button>
+<button class="b1" onclick="bmc()">取消</button>
+<button class="b2" onclick="bms()">确认</button>
+</div>
+</div>
+</div>
+
 <div class="ib" id="ib">
 <span>添加到主屏幕，使用更方便</span>
 <button class="ib-n" onclick="clib()">暂不</button>
@@ -307,7 +340,7 @@ input:checked+.slider:before{
 </div>
 
 <script>
-var N=[],M={},S=10,E=null,H=null,L=false;
+var N=[],M={},S=3,E=null,H=null,L=false;
 var dp=null;
 
 // ===== localStorage =====
@@ -498,6 +531,119 @@ if("serviceWorker" in navigator){
     b.classList.add("on");
   }
 })();
+
+// ===== 批量录入 =====
+var BT=3,BP=0,BMV={},BSX=0;
+function bmo(){
+  BT=3;
+  for(var lv=2;lv<=7;lv++){
+    var hd=false;
+    for(var i=0;i<Math.pow(3,lv-1);i++){if(M["L"+lv+"-"+i]&&M["L"+lv+"-"+i].nm){hd=true;break;}}
+    if(!hd){BT=lv+1;break;}
+  }
+  BP=0;BMV={};
+  bmg();document.getElementById("bm").classList.add("show");if(!document.getElementById("bm")._sw){initBS();}
+}
+function bmg(){
+  var pl=BT-1,pc=Math.pow(3,pl-1);
+  var lh='<div class="bmselw">';
+  for(var lv=3;lv<=8;lv++){
+    lh+='<button class="nbtn sm bmsel'+(BT===lv?' on':'')+'" onclick="bsl('+lv+')">第'+lv+'层</button>';
+  }
+  lh+='</div>';
+  document.getElementById("bml1").innerHTML='<div class="bmhdr">目标层级:</div>'+lh;
+  var pts=[];
+  for(var i=0;i<pc;i++){
+    var pn=M["L"+pl+"-"+i];
+    if(pn&&pn.nm){
+      var pt=pn.nm,ix=i,lv=pl;
+      while(lv>1){ix=Math.floor(ix/3);lv--;var a=M["L"+lv+"-"+ix];if(a&&a.nm)pt=a.nm+' '+String.fromCharCode(8250)+' '+pt;}
+      pts.push({idx:i,name:pn.nm,path:pt});
+    }
+  }
+  if(BP>=pts.length)BP=0;
+  if(pts.length===0){
+    document.getElementById("bmg").innerHTML='<div class="bmhdr" style="color:#e53935;text-align:center;padding:20px">请先在编辑模式下填写上级节点</div>';
+    return;
+  }
+  var cur=pts[BP];
+  var sh='<select class="bmpsel" id="bps" onchange="bsp(this.value)">';
+  for(var i=0;i<pts.length;i++)sh+='<option value="'+i+'"'+(i===BP?' selected':'')+'>'+pts[i].path+'</option>';
+  sh+='</select>';
+  var nh='';
+  if(pts.length>1)nh='<div class="bmnav"><button class="nbtn sm" onclick="bmpr()"'+(BP===0?' disabled':'')+'>'+String.fromCharCode(8592)+'上一组</button><span>'+(BP+1)+'/'+pts.length+'</span><button class="nbtn sm" onclick="bmnx()"'+(BP>=pts.length-1?' disabled':'')+'>下一组'+String.fromCharCode(8594)+'</button></div>';
+  var g=cur.idx;
+  var lk=(localStorage.getItem("ss33_bl")||"").split(",").filter(Boolean);
+  var lkey=BT+'-'+g,lkd=lk.indexOf(lkey)>=0;
+  if(BMV[lkey]===undefined){
+    var ex=[];
+    for(var j=0;j<3;j++){
+      var nd=M["L"+BT+"-"+(g*3+j)];
+      if(nd&&nd.nm)ex.push(nd.nm+(nd.ph?",":"")+nd.ph);
+    }
+    BMV[lkey]=ex.join("\n");
+  }
+  var si=lkd?' '+String.fromCharCode(128274):(BMV[lkey]?' '+String.fromCharCode(10003):'');
+  var gh='<div class="bmgp"><div class="bmgph"><span class="bmgpn">'+cur.name+'</span><span class="bmgpi">(上限3人)'+si+'</span></div>';
+  gh+='<textarea class="bmta'+(lkd?' bmlocked':'')+'" id="bmt-'+g+'" placeholder="粘贴3人，每行：姓名,手机号&#10;如：小明,13800000001&#10;    小红,13800000002&#10;    小刚,13800000003" rows="3"'+(lkd?' readonly':'')+'>'+BMV[lkey]+'</textarea>';
+  gh+='<div class="bmbtnr">';
+  if(!lkd){
+    gh+='<button class="nbtn sm bmclr" onclick="bmcl()">清空本组</button>';
+    gh+='<button class="nbtn sm bmlk" onclick="bmlk()">'+String.fromCharCode(128274)+'锁定</button>';
+  }else{
+    gh+='<button class="nbtn sm bmlk on" onclick="bmunlk()">'+String.fromCharCode(128275)+'解锁</button>';
+  }
+  gh+='</div></div>';
+  document.getElementById("bmg").innerHTML=sh+nh+gh;
+}
+function bsv(){var g=getCP();if(g>=0)BMV[BT+'-'+g]=document.getElementById("bmt-"+g).value;}
+function getCP(){
+  var pl=BT-1,pc=Math.pow(3,pl-1),pts=[];
+  for(var i=0;i<pc;i++){if(M["L"+pl+"-"+i]&&M["L"+pl+"-"+i].nm)pts.push(i);}
+  return BP<pts.length?pts[BP]:-1;
+}
+function bsl(lv){bsv();BT=lv;BP=0;BMV={};bmg();}
+function bsp(idx){bsv();BP=parseInt(idx);bmg();}
+function bmpr(){bsv();var pl=BT-1,pc=Math.pow(3,pl-1),pts=[];for(var i=0;i<pc;i++){if(M["L"+pl+"-"+i]&&M["L"+pl+"-"+i].nm)pts.push(i);}if(BP>0)BP--;bmg();}
+function bmnx(){bsv();var pl=BT-1,pc=Math.pow(3,pl-1),pts=[];for(var i=0;i<pc;i++){if(M["L"+pl+"-"+i]&&M["L"+pl+"-"+i].nm)pts.push(i);}if(BP<pts.length-1)BP++;bmg();}
+function bmlk(){
+  var g=getCP(),locks=(localStorage.getItem("ss33_bl")||"").split(",").filter(Boolean);
+  var lk=BT+'-'+g;if(locks.indexOf(lk)<0)locks.push(lk);
+  localStorage.setItem("ss33_bl",locks.join(","));bmg();
+}
+function bmunlk(){
+  var g=getCP(),locks=(localStorage.getItem("ss33_bl")||"").split(",").filter(Boolean);
+  var lk=BT+'-'+g;locks=locks.filter(function(l){return l!==lk;});
+  localStorage.setItem("ss33_bl",locks.join(","));bmg();
+}
+function bmcl(){
+  var g=getCP(),locks=(localStorage.getItem("ss33_bl")||"").split(",").filter(Boolean);
+  if(locks.indexOf(BT+'-'+g)>=0)return;
+  delete BMV[BT+'-'+g];bmg();
+}
+function bmca(){BMV={};bmg();}
+function bmc(){document.getElementById("bm").classList.remove("show");}
+function bms(){
+  bsv();var errs=[],tl=BT,pl=BT-1,pc=Math.pow(3,pl-1),all=[];
+  for(var i=0;i<pc;i++){
+    var pn=M["L"+pl+"-"+i];if(!pn||!pn.nm)continue;
+    var raw=(BMV[tl+'-'+i]||"").trim();if(!raw)continue;
+    var lines=raw.split("\n").filter(function(l){return l.trim();});
+    if(lines.length>3){errs.push('"'+pn.nm+'" 超过3人上限（已填'+lines.length+'人）');continue;}
+    var grp=[];for(var li=0;li<lines.length;li++){var ps=lines[li].split(/[,，]/),nm=(ps[0]||"").trim(),ph=(ps[1]||"").trim();if(nm)grp.push({nm:nm,ph:ph});}
+    all.push({p:i,ents:grp});
+  }
+  if(errs.length>0){alert("人数超限：\n"+errs.join("\n"));return;}
+  if(all.length===0){alert("未检测到有效数据");return;}
+  for(var ai=0;ai<all.length;ai++){var e=all[ai],base=e.p*3;for(var j=0;j<3;j++){var nid="L"+tl+"-"+(base+j);if(j<e.ents.length)M[nid]={nm:e.ents[j].nm,ph:e.ents[j].ph};}}
+  sv();rb();bmc();BMV={};
+}
+function initBS(){
+  var bm=document.getElementById("bm");bm._sw=true;
+  bm.addEventListener("touchstart",function(e){BSX=e.touches[0].clientX;},{passive:true});
+  bm.addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-BSX;if(Math.abs(dx)>50){if(dx<0)bmnx();else bmpr();}});
+}
+document.getElementById("bm").addEventListener("click",function(e){if(e.target===this)bmc();});
 
 rb();
 </script>
