@@ -1,5 +1,5 @@
 ﻿// 三三复制 - Service Worker
-var CACHE = "ss33-v2";
+var CACHE = "ss33-v3";
 var URLS = [
   ".",
   "index.html",
