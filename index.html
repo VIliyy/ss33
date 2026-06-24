@@ -128,12 +128,28 @@ input:checked+.slider:before{
 /* ===== Scroll Area ===== */
 .bd{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg);padding:4px 0 30px}
 
-/* ===== Level Section ===== */
-.lv{margin:8px 10px 4px}
-.lvh{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;padding:0 4px}
-.lvh .n{font-size:13px;font-weight:700;color:var(--text)}
-.lvh .d{font-size:10px;color:var(--muted)}
-.lvh .lbar{flex:1;height:2px;border-radius:1px;background:var(--shadow1);opacity:.5}
+/* ===== Tab Bar ===== */
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding:6px 10px;flex-shrink:0;background:var(--bg);border-bottom:1px solid rgba(0,0,0,.04)}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;height:28px;padding:0 12px;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all .25s var(--ease);background:var(--bg);color:var(--muted);box-shadow:2px 2px 5px var(--shadow1),-2px -2px 5px var(--shadow2);display:flex;align-items:center;gap:3px;white-space:nowrap}
+.tab:active{box-shadow:inset 2px 2px 4px var(--shadow1),inset -2px -2px 4px var(--shadow2)}
+.tab.on{background:var(--accent);color:#fff;box-shadow:3px 3px 6px rgba(255,152,0,.3),-3px -3px 6px var(--shadow2)}
+.tab .badge{font-size:9px;opacity:.8}
+
+/* ===== Breadcrumb ===== */
+.crumb{display:flex;align-items:center;gap:4px;padding:4px 10px;font-size:10px;color:var(--muted);flex-shrink:0;background:var(--bg);overflow-x:auto;scrollbar-width:none;white-space:nowrap;min-height:24px}
+.crumb::-webkit-scrollbar{display:none}
+.crumb .cs{color:var(--accent);font-weight:600;cursor:pointer;transition:opacity .2s}
+.crumb .cs:active{opacity:.6}
+.crumb .ar{color:var(--shadow1);margin:0 2px}
+
+/* ===== Level Title ===== */
+.lvt{text-align:center;font-size:12px;font-weight:700;color:var(--text);padding:8px 0 4px}
+.lvt span{color:var(--muted);font-weight:400;font-size:10px}
+
+/* ===== Bottom Stats Bar ===== */
+.statbar{flex-shrink:0;text-align:center;padding:6px 10px 10px;font-size:10px;color:var(--muted);background:var(--bg);border-top:1px solid rgba(0,0,0,.04)}
+.statbar b{color:var(--accent);font-weight:700}
 
 .l1r{display:flex;justify-content:center;padding:4px 0}
 .lsr-h{overflow-x:auto;overflow-y:visible;scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;padding:0 6px;width:100%}
@@ -297,6 +313,9 @@ input:checked+.slider:before{
 </div>
 </div>
 
+<div class="tabs" id="tabs"></div>
+<div class="crumb" id="crumb" style="display:none"></div>
+
 <div class="pp" id="pp">
 <div class="ppi">
 <label>显示层级</label>
@@ -365,8 +384,10 @@ input:checked+.slider:before{
 <button class="ib-y" id="ib-btn" onclick="ip()">立即安装</button>
 </div>
 
+<div class="statbar" id="statbar"></div>
+
 <script>
-var N=[],M={},S=3,E=null,H=null,L=false;
+var N=[],M={},S=3,E=null,H=null,L=false,CL=1,CP=null;
 var G={},obs=null;
 var dp=null;
 
@@ -411,8 +432,8 @@ function ulk(){
 ulk();
 
 function tp(){document.getElementById("pp").classList.toggle("open")}
-function tl(){L=!L;sv();ulk();rb()}
-function sl(n){S=n;sv();document.querySelectorAll(".nbtn.sm").forEach(function(b){b.classList.remove("on")});var b=document.getElementById("b"+n);if(b)b.classList.add("on");rb()}
+function tl(){L=!L;sv();ulk();renderAll()}
+function sl(n){S=n;sv();document.querySelectorAll(".nbtn.sm").forEach(function(b){b.classList.remove("on")});var b=document.getElementById("b"+n);if(b)b.classList.add("on");renderAll()}
 
 function gn(){
   N=[];for(var l=1;l<=Math.max(S,10);l++){var c=Math.pow(3,l-1),a=[];for(var i=0;i<c;i++)a.push({id:"L"+l+"-"+i,lv:l,ix:i,pv:l===1?12800:Math.floor(Math.random()*8000+500)});N.push(a)}
@@ -420,42 +441,144 @@ function gn(){
 function ap(nd){if(M[nd.id]){nd.nm=M[nd.id].nm;nd.ph=M[nd.id].ph}else if(!nd.nm)nd.nm=nd.lv===1?" ":""+nd.lv+"-"+nd.ix}
 function fn(id){for(var l=0;l<N.length;l++)for(var i=0;i<N[l].length;i++)if(N[l][i].id===id)return N[l][i];return null}
 
-function rb(){
-  gn();var h="";
+function renderAll(){
+  gn();
+  renderTabs();
+  renderCrumb();
+  renderLevel(CL);
+  renderStats();
+}
+function getFilled(lv){
+  var c=0,total=Math.pow(3,lv-1);
+  for(var i=0;i<total;i++){
+    var nd=M["L"+lv+"-"+i];
+    if(nd&&nd.nm) c++;
+  }
+  return c;
+}
+function getMaxFilled(){
+  var mx=0;
+  for(var lv=1;lv<=10;lv++){
+    if(getFilled(lv)>0) mx=lv;
+  }
+  return mx;
+}
+function renderTabs(){
+  var h='';
   for(var lv=1;lv<=S;lv++){
-    var nodes=N[lv-1],total=nodes.length,groups=[];
-    for(var g=0;g*3<total;g++){
-      var grp=[];for(var i=g*3;i<Math.min(g*3+3,total);i++)grp.push(nodes[i]);
-      while(grp.length<3)grp.push({id:"E-L"+lv+"-"+g+"-"+grp.length,em:true,lv:lv,ix:-1});
-      groups.push(grp);
+    var f=getFilled(lv),t=Math.pow(3,lv-1);
+    var badge=f===t&&f>0?'('+f+')':'('+f+'/'+t+')';
+    var on=lv===CL?' on':'';
+    h+='<button class="tab'+on+'" onclick="switchTab('+lv+')">'+lv+'层<span class="badge">'+badge+'</span></button>';
+  }
+  document.getElementById("tabs").innerHTML=h;
+  // Auto-scroll tab bar to current level
+  var tb=document.getElementById("tabs");
+  var ct=tb.querySelector('.tab.on');
+  if(ct) ct.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+}
+function renderCrumb(){
+  var c=document.getElementById("crumb");
+  if(!CP){
+    c.style.display='none';c.innerHTML='';return;
+  }
+  c.style.display='flex';
+  // Build path from CP up to root
+  var path=[];
+  var id=CP,lv=CL-1,ix=-1;
+  // Find the current node
+  for(var i=0;i<N[lv-1].length;i++){
+    if(N[lv-1][i].id===id){ix=N[lv-1][i].ix;break;}
+  }
+  path.push({id:id,lv:lv,ix:ix});
+  while(lv>1){
+    ix=Math.floor(ix/3);lv--;
+    path.unshift({id:"L"+lv+"-"+ix,lv:lv,ix:ix});
+  }
+  var h='📍 ';
+  for(var pi=0;pi<path.length;pi++){
+    var nd=path[pi];
+    var nm=M[nd.id]&&M[nd.id].nm?M[nd.id].nm:'L'+nd.lv+'-'+(nd.ix+1);
+    h+='<span class="cs" onclick="crumbNav(''+nd.id+'','+nd.lv+')">'+nm+'(L'+nd.lv+')</span>';
+    if(pi<path.length-1) h+=' <span class="ar">→</span> ';
+  }
+  c.innerHTML=h;
+}
+function renderLevel(lv){
+  gn();
+  var nodes=N[lv-1],total=nodes.length,groups=[],h='';
+  for(var g=0;g*3<total;g++){
+    var grp=[];
+    for(var i=g*3;i<Math.min(g*3+3,total);i++) grp.push(nodes[i]);
+    while(grp.length<3) grp.push({id:"E-L"+lv+"-"+g+"-"+grp.length,em:true,lv:lv,ix:-1});
+    groups.push(grp);
+  }
+  var f=getFilled(lv),t=Math.pow(3,lv-1);
+  h+='<div class="lvt">'+lv+'层 <span>'+f+'/'+t+'人</span></div>';
+  if(lv===1){
+    ap(groups[0][0]);
+    h+='<div class="l1r">'+cd(groups[0][0],false)+'</div>';
+  } else if(lv===2){
+    h+='<div class="l1r"><div style="display:flex;gap:8px">';
+    for(var c=0;c<3;c++){ap(groups[0][c]);h+=cd(groups[0][c],false);}
+    h+='</div></div>';
+  } else {
+    h+='<div class="lsr-h" id="lsh-'+lv+'" onscroll="updateDots(this,'+lv+','+groups.length+')"><div class="lrw">';
+    for(var gi=0;gi<groups.length;gi++){
+      h+='<div class="grp grp-ph" data-lg="'+lv+'" data-gg="'+gi+'"></div>';
     }
-    var desc=lv===1?" ":lv===2?" ":lv===3?" ":" "+lv+" ";
-    h+='<div class="lv" id="lv-'+lv+'"><div class="lvh"><span class="n" onclick="jumpLv('+lv+')" style="cursor:pointer">'+lv+'</span><span class="lbar"></span><span class="d">'+total+'</span></div>';
-    if(lv===1){
-      ap(groups[0][0]);h+='<div class="l1r">'+cd(groups[0][0],true)+'</div>';
-    } else if(lv===2){
-      h+='<div class="l1r"><div style="display:flex;gap:8px">';
-      for(var c=0;c<3;c++){ap(groups[0][c]);h+=cd(groups[0][c],false)}
-      h+='</div></div>';
-    } else {
-      h+='<div class="lsr-h" id="lsh-'+lv+'" onscroll="updateDots(this,'+lv+','+groups.length+')"><div class="lrw">';
-      for(var gi=0;gi<groups.length;gi++){
-        h+='<div class="grp grp-ph" data-lg="'+lv+'" data-gg="'+gi+'"></div>';
+    h+='</div></div>';
+    if(groups.length>1){
+      h+='<div class="grp-dots" id="dots-'+lv+'">';
+      for(var di=0;di<groups.length;di++){
+        h+='<span class="dot'+(di===0?' on"':'')+'" data-dot="'+di+'" data-lv="'+lv+'" onclick="jumpDot(this,'+lv+','+di+')"></span>';
       }
-      h+='</div></div>';
-      if(groups.length>1){
-        h+='<div class="grp-dots" id="dots-'+lv+'">';
-        for(var di=0;di<groups.length;di++){
-          h+='<span class="dot'+(di===0?' on"':'"')+'" data-dot="'+di+'" data-lv="'+lv+'" onclick="jumpDot(this,'+lv+','+di+')"></span>';
-        }
-        h+='</div>';
-      }
+      h+='</div>';
     }
-    h+='</div>';
   }
   document.getElementById("bd").innerHTML=h;H=null;
   initObs();
+  // After render, apply parent highlight if in navigation mode
+  if(CP&&lv>1){
+    applyParentHighlight(lv);
+  }
 }
+function applyParentHighlight(lv){
+  // Find the parent index from CP
+  var parentNd=fn(CP);
+  if(!parentNd||parentNd.lv!==lv-1) return;
+  var cs=parentNd.ix*3;
+  var cgi=Math.floor(cs/3);
+  forceRenderGroup(lv,cgi);
+  // Highlight children, dim others
+  setTimeout(function(){
+    document.querySelectorAll("#bd .cd").forEach(function(el){
+      var id=el.id.replace("nc-","");
+      var idx=parseInt(id.split("-").pop());
+      if(idx>=cs&&idx<cs+3){
+        el.classList.remove("dim");
+        el.style.boxShadow="0 0 0 2px var(--accent),5px 5px 12px var(--shadow1),-5px -5px 12px var(--shadow2)";
+      } else {
+        el.classList.add("dim");
+        el.style.boxShadow="";
+      }
+    });
+  },100);
+}
+function renderStats(){
+  var total=0,mx=getMaxFilled();
+  for(var lv=1;lv<=S;lv++) total+=getFilled(lv);
+  document.getElementById("statbar").innerHTML='👥 已录入 <b>'+total+'人</b> · 最深 <b>'+mx+'层</b>';
+}
+function switchTab(lv){
+  CL=lv;CP=null;
+  renderAll();
+}
+function crumbNav(id,lv){
+  CL=lv;CP=id;
+  renderAll();
+}
+
 
 function cd(nd,sel){
   var lc="l"+(Math.min(nd.lv,6));
@@ -472,37 +595,17 @@ function cc(ev,id){
   ev.stopPropagation();
   var nd=fn(id);if(!nd||nd.em)return;
   if(!L){oe(nd);return}
-  if(H&&H.id===id){unsel();return}
-  document.querySelectorAll(".cd").forEach(function(el){el.classList.add("dim")});
-  var me=document.getElementById("nc-"+id);if(me){me.classList.remove("dim");me.classList.add("sel")}
-  var ix=nd.ix,lv=nd.lv;
-  while(lv>1){
-    ix=Math.floor(ix/3);lv--;
-    var pgi=Math.floor(ix/3);forceRenderGroup(lv,pgi);
-    var anc=document.getElementById("nc-L"+lv+"-"+ix);
-    if(anc){anc.classList.remove("dim");anc.classList.add("anc")}
-  }
+  // Browse mode: navigate to next level and highlight children
   if(nd.lv<S){
-    var cs=nd.ix*3;
-    var cgi=Math.floor(cs/3);forceRenderGroup(nd.lv+1,cgi);
-    for(var c=cs;c<Math.min(cs+3,Math.pow(3,nd.lv));c++){
-      var ch=document.getElementById("nc-L"+(nd.lv+1)+"-"+c);
-      if(ch){ch.classList.remove("dim");ch.classList.add("chl")}
-    }
+    CL=nd.lv+1;CP=id;
+    renderAll();
   }
-  H=nd;
 }
 
 function unsel(ev){
   if(ev&&ev.target.closest(".cd"))return;
-  document.querySelectorAll(".cd").forEach(function(el){el.classList.remove("dim","sel","anc","chl")});
-  H=null;
 }
-
-function jumpLv(lv){
-  var el=document.getElementById("lv-"+lv);
-  if(el)el.scrollIntoView({behavior:"smooth",block:"start"});
-}
+
 function updateDots(el,lv,count){
   if(el._ud)return;
   el._ud=true;
@@ -563,7 +666,7 @@ function se(){
   if(!nm){alert("    ");return}
   E.nm=nm;E.ph=ph;M[E.id]={nm:nm,ph:ph};
   sv();
-  rb();ce();
+  renderAll();ce();
 }
 document.getElementById("mo").addEventListener("click",function(e){if(e.target===this)ce()});
 
@@ -590,7 +693,7 @@ function im(){
       try{
         var data=JSON.parse(r.result);
         for(var k in data) localStorage.setItem(k,data[k]);
-        ld();rb();alert("导入成功！");
+        ld();renderAll();alert("导入成功！");
       }catch(e){alert("文件格式错误，请检查")}
     };
     r.readAsText(f);
@@ -727,7 +830,7 @@ function bms(){
   if(errs.length>0){alert("人数超限：\n"+errs.join("\n"));return;}
   if(all.length===0){alert("未检测到有效数据");return;}
   for(var ai=0;ai<all.length;ai++){var e=all[ai],base=e.p*3;for(var j=0;j<3;j++){var nid="L"+tl+"-"+(base+j);if(j<e.ents.length)M[nid]={nm:e.ents[j].nm,ph:e.ents[j].ph};}}
-  sv();rb();bmc();BMV={};
+  sv();renderAll();bmc();BMV={};
 }
 function initBS(){
   var bm=document.getElementById("bm");bm._sw=true;
@@ -746,7 +849,7 @@ function vuck(){}function vucl(){
     setTimeout(function(){document.getElementById("vu").classList.add("show")},600);
   }
 })();
-rb();
+renderAll();
 </script>
 </body>
 </html>
