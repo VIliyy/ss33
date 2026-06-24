@@ -483,10 +483,8 @@ function renderCrumb(){
     c.style.display='none';c.innerHTML='';return;
   }
   c.style.display='flex';
-  // Build path from CP up to root
   var path=[];
   var id=CP,lv=CL-1,ix=-1;
-  // Find the current node
   for(var i=0;i<N[lv-1].length;i++){
     if(N[lv-1][i].id===id){ix=N[lv-1][i].ix;break;}
   }
@@ -495,12 +493,12 @@ function renderCrumb(){
     ix=Math.floor(ix/3);lv--;
     path.unshift({id:"L"+lv+"-"+ix,lv:lv,ix:ix});
   }
-  var h='📍 ';
+  var h='\u{1F4CD} ';
   for(var pi=0;pi<path.length;pi++){
     var nd=path[pi];
     var nm=M[nd.id]&&M[nd.id].nm?M[nd.id].nm:'L'+nd.lv+'-'+(nd.ix+1);
-    h+='<span class="cs" onclick="crumbNav(''+nd.id+'','+nd.lv+')">'+nm+'(L'+nd.lv+')</span>';
-    if(pi<path.length-1) h+=' <span class="ar">→</span> ';
+    h+='<span class="cs" data-cid="'+nd.id+'" data-clv="'+nd.lv+'" onclick="crumbNav(this)">'+nm+'(L'+nd.lv+')</span>';
+    if(pi<path.length-1) h+=' <span class="ar">\u2192</span> ';
   }
   c.innerHTML=h;
 }
@@ -574,7 +572,9 @@ function switchTab(lv){
   CL=lv;CP=null;
   renderAll();
 }
-function crumbNav(id,lv){
+function crumbNav(el){
+  var id=el.getAttribute("data-cid");
+  var lv=parseInt(el.getAttribute("data-clv"));
   CL=lv;CP=id;
   renderAll();
 }
