@@ -253,6 +253,12 @@ input:checked+.slider:before{
 .ib .ib-y{background:var(--accent);color:#fff}
 .ib .ib-n{background:rgba(255,255,255,.15);color:#fff}
 
+/* ===== Version Update Modal ===== */
+.vu-notes{font-size:11px;line-height:1.7;color:var(--text);margin:8px 0 14px;padding:0 2px}
+.vu-notes li{margin-bottom:5px;padding-left:2px;list-style:disc;margin-left:16px}
+.vu-chk{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);margin-bottom:12px;cursor:pointer}
+.vu-chk input{width:14px;height:14px;accent-color:var(--accent)}
+
 /* ===== Batch Modal ===== */
 .bmgp{background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:10px;box-shadow:inset 2px 2px 5px var(--shadow1),inset -2px -2px 5px var(--shadow2)}
 .bmgph{display:flex;align-items:baseline;gap:6px;margin-bottom:6px}
@@ -309,6 +315,7 @@ input:checked+.slider:before{
 </div>
 </div>
 </div>
+<div style="text-align:center;padding:2px 0 4px;font-size:9px;color:var(--muted);opacity:.7">v0.4</div>
 
 <div class="bd" id="bd" onclick="unsel(event)"></div>
 
@@ -331,6 +338,20 @@ input:checked+.slider:before{
 <button class="b1" onclick="bmc()">取消</button>
 <button class="b2" onclick="bms()">确认</button>
 </div>
+</div>
+</div>
+
+
+<div class="mo" id="vu">
+<div class="ms">
+<h3>  v0.4 更新内容</h3>
+<ul class="vu-notes">
+<li>虚拟滚动优化：屏幕外卡片不再渲染，解决安卓部分机型卡死问题</li>
+<li>滑动手势优化：横向滚动区域支持垂直滑动穿透，可流畅滑动到深层</li>
+<li>新增版本更新提示</li>
+</ul>
+<label class="vu-chk"><input type="checkbox" id="vu-ck" onchange="vuck()"> 不再显示此更新提示</label>
+<div class="ba"><button class="b2" onclick="vucl()">知道了</button></div>
 </div>
 </div>
 
@@ -700,6 +721,16 @@ function initTouch(){
     if(el){el._tsx=undefined;el._tsy=undefined;el._tdir=null;}
   },{passive:true});
 }
+function vuck(){}function vucl(){
+  var ck=document.getElementById("vu-ck");
+  if(ck&&ck.checked)localStorage.setItem("ss33_vu04","1");
+  document.getElementById("vu").classList.remove("show");
+}
+(function(){
+  if(localStorage.getItem("ss33_vu04")!=="1"){
+    setTimeout(function(){document.getElementById("vu").classList.add("show")},600);
+  }
+})();
 initTouch();
 rb();
 </script>
