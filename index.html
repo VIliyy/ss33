@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -143,6 +143,7 @@ input:checked+.slider:before{
 .lrw{display:flex;gap:0;white-space:nowrap;padding:0 6px}
 .grp{display:flex;gap:8px;flex-shrink:0;margin-right:20px}
 .grp:last-child{margin-right:0}
+.grp-ph{content-visibility:auto;contain-intrinsic-size:276px 100px;display:flex;align-items:center;justify-content:center;min-height:90px}.grp-ph::after{content:"\2026";font-size:22px;color:var(--shadow1);opacity:.4}
 
 /* ===== Neumorphism Card ===== */
 .cd{
@@ -341,6 +342,7 @@ input:checked+.slider:before{
 
 <script>
 var N=[],M={},S=3,E=null,H=null,L=false;
+var G={},obs=null;
 var dp=null;
 
 // ===== localStorage =====
@@ -413,15 +415,14 @@ function rb(){
     } else {
       h+='<div class="lsr"><div class="lrw">';
       for(var gi=0;gi<groups.length;gi++){
-        h+='<div class="grp">';
-        for(var ci=0;ci<3;ci++){ap(groups[gi][ci]);h+=cd(groups[gi][ci],false)}
-        h+='</div>';
+        h+='<div class="grp grp-ph" data-lg="'+lv+'" data-gg="'+gi+'"></div>';
       }
       h+='</div></div>';
     }
     h+='</div>';
   }
   document.getElementById("bd").innerHTML=h;H=null;
+  initObs();
 }
 
 function cd(nd,sel){
@@ -445,11 +446,13 @@ function cc(ev,id){
   var ix=nd.ix,lv=nd.lv;
   while(lv>1){
     ix=Math.floor(ix/3);lv--;
+    var pgi=Math.floor(ix/3);forceRenderGroup(lv,pgi);
     var anc=document.getElementById("nc-L"+lv+"-"+ix);
     if(anc){anc.classList.remove("dim");anc.classList.add("anc")}
   }
   if(nd.lv<S){
     var cs=nd.ix*3;
+    var cgi=Math.floor(cs/3);forceRenderGroup(nd.lv+1,cgi);
     for(var c=cs;c<Math.min(cs+3,Math.pow(3,nd.lv));c++){
       var ch=document.getElementById("nc-L"+(nd.lv+1)+"-"+c);
       if(ch){ch.classList.remove("dim");ch.classList.add("chl")}
@@ -463,6 +466,35 @@ function unsel(ev){
   document.querySelectorAll(".cd").forEach(function(el){el.classList.remove("dim","sel","anc","chl")});
   H=null;
 }
+
+function initObs(){
+  if(obs)obs.disconnect();
+  G={};
+  obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        var lv=parseInt(e.target.dataset.lg);
+        var gi=parseInt(e.target.dataset.gg);
+        renderGroup(lv,gi);
+      }
+    });
+  },{root:document.getElementById("bd"),rootMargin:"300px"});
+  document.querySelectorAll(".grp-ph").forEach(function(el){obs.observe(el)});
+}
+function renderGroup(lv,gi){
+  var el=document.querySelector('.grp-ph[data-lg="'+lv+'"][data-gg="'+gi+'"]');
+  if(!el||G[lv+'-'+gi])return;
+  G[lv+'-'+gi]=true;
+  var nodes=N[lv-1],h='';
+  var start=gi*3,end=Math.min(gi*3+3,nodes.length);
+  for(var ci=start;ci<end;ci++){ap(nodes[ci]);h+=cd(nodes[ci],false)}
+  for(var ci=end-gi*3;ci<3;ci++){
+    h+=cd({id:"E-L"+lv+"-"+gi+"-"+ci,em:true,lv:lv,ix:-1},false);
+  }
+  el.classList.remove("grp-ph");
+  el.innerHTML=h;
+}
+function forceRenderGroup(lv,gi){renderGroup(lv,gi)}
 
 function oe(nd){E=nd;document.getElementById("mt").textContent="   "+nd.lv+" ";document.getElementById("mn").value=nd.nm||"";document.getElementById("mp").value=nd.ph||"";document.getElementById("mo").classList.add("show");setTimeout(function(){document.getElementById("mn").focus()},300)}
 function ce(){document.getElementById("mo").classList.remove("show");E=null}
@@ -645,6 +677,30 @@ function initBS(){
 }
 document.getElementById("bm").addEventListener("click",function(e){if(e.target===this)bmc();});
 
+function initTouch(){
+  var bd=document.getElementById("bd");if(!bd||bd._tinit)return;
+  bd._tinit=true;
+  bd.addEventListener("touchstart",function(e){
+    var el=e.target.closest(".lsr");
+    if(el){el._tsx=e.touches[0].clientX;el._tsy=e.touches[0].clientY;el._tdir=null;}
+  },{passive:true});
+  bd.addEventListener("touchmove",function(e){
+    var el=e.target.closest(".lsr");
+    if(el&&el._tsx!==undefined){
+      if(el._tdir===null){
+        var dx=Math.abs(e.touches[0].clientX-el._tsx);
+        var dy=Math.abs(e.touches[0].clientY-el._tsy);
+        if(dx>8||dy>8)el._tdir=dy>dx*1.5?"v":"h";
+      }
+      if(el._tdir==="v")e.preventDefault();
+    }
+  },{passive:false});
+  bd.addEventListener("touchend",function(e){
+    var el=e.target.closest(".lsr");
+    if(el){el._tsx=undefined;el._tsy=undefined;el._tdir=null;}
+  },{passive:true});
+}
+initTouch();
 rb();
 </script>
 </body>
