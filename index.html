@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -126,7 +126,7 @@ input:checked+.slider:before{
 .ppi .nb-row{display:flex;gap:6px;align-items:flex-end}
 
 /* ===== Scroll Area ===== */
-.bd{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg);padding:4px 0 30px}
+.bd{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg);padding:4px 0 30px}
 
 /* ===== Level Section ===== */
 .lv{margin:8px 10px 4px}
@@ -136,11 +136,17 @@ input:checked+.slider:before{
 .lvh .lbar{flex:1;height:2px;border-radius:1px;background:var(--shadow1);opacity:.5}
 
 .l1r{display:flex;justify-content:center;padding:4px 0}
-.lsr{padding:4px 0}
-.lrw{display:flex;flex-wrap:wrap;gap:8px;padding:0 6px;justify-content:center}
-.grp{display:flex;gap:8px;margin:4px}
-.grp:last-child{margin-right:4px}
-.grp-ph{content-visibility:auto;contain-intrinsic-size:276px 100px;display:flex;align-items:center;justify-content:center;min-height:90px}.grp-ph::after{content:"\2026";font-size:22px;color:var(--shadow1);opacity:.4}
+.lsr-h{overflow-x:auto;overflow-y:visible;scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;padding:0 6px;width:100%}
+.lsr-h::-webkit-scrollbar{height:4px}
+.lsr-h::-webkit-scrollbar-track{background:transparent}
+.lsr-h::-webkit-scrollbar-thumb{background:var(--shadow1);border-radius:2px}
+.lsr-h .lrw{display:flex;gap:16px;padding:0 4px}
+.lsr-h .lrw::after{content:"";flex:0 0 6px}
+.grp{display:flex;gap:8px;flex-shrink:0;scroll-snap-align:start}
+.grp-ph{content-visibility:auto;contain-intrinsic-size:276px 100px;display:flex;align-items:center;justify-content:center;min-height:90px;flex-shrink:0;scroll-snap-align:start}.grp-ph::after{content:"\2026";font-size:22px;color:var(--shadow1);opacity:.4}
+.grp-dots{display:flex;justify-content:center;align-items:center;gap:6px;padding:6px 0 2px;height:20px}
+.grp-dots .dot{width:6px;height:6px;border-radius:50%;background:transparent;border:1.5px solid var(--shadow1);transition:all .25s var(--ease);cursor:pointer}
+.grp-dots .dot.on{background:var(--accent);border-color:var(--accent);width:8px;height:8px}
 
 /* ===== Neumorphism Card ===== */
 .cd{
@@ -312,7 +318,7 @@ input:checked+.slider:before{
 </div>
 </div>
 </div>
-<div style="text-align:center;padding:2px 0 4px;font-size:9px;color:var(--muted);opacity:.7">v0.4</div>
+<div style="text-align:center;padding:2px 0 4px;font-size:9px;color:var(--muted);opacity:.7">v0.5</div>
 
 <div class="bd" id="bd" onclick="unsel(event)"></div>
 
@@ -341,11 +347,12 @@ input:checked+.slider:before{
 
 <div class="mo" id="vu">
 <div class="ms">
-<h3>  v0.4 更新内容</h3>
+<h3>  v0.5 更新内容</h3>
 <ul class="vu-notes">
-<li>虚拟滚动优化：屏幕外卡片不再渲染，解决安卓部分机型卡死问题</li>
-<li>滑动手势优化：横向滚动区域支持垂直滑动穿透，可流畅滑动到深层</li>
-<li>新增版本更新提示</li>
+<li>修复垂直方向无法上下滑动的问题</li>
+<li>第3层起改为横向滑动翻页，每组3人一页，避免人群密集</li>
+<li>新增组间圆点导航，当前所在组一目了然</li>
+<li>整体保持 neumorphic 视觉风格</li>
 </ul>
 <label class="vu-chk"><input type="checkbox" id="vu-ck" onchange="vuck()"> 不再显示此更新提示</label>
 <div class="ba"><button class="b2" onclick="vucl()">知道了</button></div>
@@ -408,7 +415,7 @@ function tl(){L=!L;sv();ulk();rb()}
 function sl(n){S=n;sv();document.querySelectorAll(".nbtn.sm").forEach(function(b){b.classList.remove("on")});var b=document.getElementById("b"+n);if(b)b.classList.add("on");rb()}
 
 function gn(){
-  N=[];for(var l=1;l<=10;l++){var c=Math.pow(3,l-1),a=[];for(var i=0;i<c;i++)a.push({id:"L"+l+"-"+i,lv:l,ix:i,pv:l===1?12800:Math.floor(Math.random()*8000+500)});N.push(a)}
+  N=[];for(var l=1;l<=Math.max(S,10);l++){var c=Math.pow(3,l-1),a=[];for(var i=0;i<c;i++)a.push({id:"L"+l+"-"+i,lv:l,ix:i,pv:l===1?12800:Math.floor(Math.random()*8000+500)});N.push(a)}
 }
 function ap(nd){if(M[nd.id]){nd.nm=M[nd.id].nm;nd.ph=M[nd.id].ph}else if(!nd.nm)nd.nm=nd.lv===1?" ":""+nd.lv+"-"+nd.ix}
 function fn(id){for(var l=0;l<N.length;l++)for(var i=0;i<N[l].length;i++)if(N[l][i].id===id)return N[l][i];return null}
@@ -431,11 +438,18 @@ function rb(){
       for(var c=0;c<3;c++){ap(groups[0][c]);h+=cd(groups[0][c],false)}
       h+='</div></div>';
     } else {
-      h+='<div class="lsr"><div class="lrw">';
+      h+='<div class="lsr-h" id="lsh-'+lv+'" onscroll="updateDots(this,'+lv+','+groups.length+')"><div class="lrw">';
       for(var gi=0;gi<groups.length;gi++){
         h+='<div class="grp grp-ph" data-lg="'+lv+'" data-gg="'+gi+'"></div>';
       }
       h+='</div></div>';
+      if(groups.length>1){
+        h+='<div class="grp-dots" id="dots-'+lv+'">';
+        for(var di=0;di<groups.length;di++){
+          h+='<span class="dot'+(di===0?' on"':'"')+'" data-dot="'+di+'" data-lv="'+lv+'" onclick="jumpDot(this,'+lv+','+di+')"></span>';
+        }
+        h+='</div>';
+      }
     }
     h+='</div>';
   }
@@ -489,6 +503,28 @@ function jumpLv(lv){
   var el=document.getElementById("lv-"+lv);
   if(el)el.scrollIntoView({behavior:"smooth",block:"start"});
 }
+function updateDots(el,lv,count){
+  if(el._ud)return;
+  el._ud=true;
+  requestAnimationFrame(function(){
+    el._ud=false;
+    var w=el.scrollWidth-el.clientWidth;
+    if(w<=0)return;
+    var idx=Math.round(el.scrollLeft/w*(count-1));
+    var dots=document.querySelectorAll('#dots-'+lv+' .dot');
+    for(var i=0;i<dots.length;i++){
+      dots[i].classList.toggle('on',i===idx);
+    }
+  });
+}
+function jumpDot(el,lv,idx){
+  var container=document.getElementById('lsh-'+lv);
+  if(!container)return;
+  var w=container.scrollWidth-container.clientWidth;
+  var cnt=document.querySelectorAll('#dots-'+lv+' .dot').length;
+  var pos=w>0?Math.round(idx/(cnt-1)*w):0;
+  container.scrollTo({left:pos,behavior:'smooth'});
+}
 function initObs(){
   if(obs)obs.disconnect();
   G={};
@@ -500,9 +536,10 @@ function initObs(){
         renderGroup(lv,gi);
       }
     });
-  },{root:document.getElementById("bd"),rootMargin:"300px"});
+  },{root:document.getElementById("bd"),rootMargin:"500px"});
   document.querySelectorAll(".grp-ph").forEach(function(el){obs.observe(el)});
 }
+
 function renderGroup(lv,gi){
   var el=document.querySelector('.grp-ph[data-lg="'+lv+'"][data-gg="'+gi+'"]');
   if(!el||G[lv+'-'+gi])return;
@@ -701,11 +738,11 @@ document.getElementById("bm").addEventListener("click",function(e){if(e.target==
 
 function vuck(){}function vucl(){
   var ck=document.getElementById("vu-ck");
-  if(ck&&ck.checked)localStorage.setItem("ss33_vu04","1");
+  if(ck&&ck.checked)localStorage.setItem("ss33_vu05","1");
   document.getElementById("vu").classList.remove("show");
 }
 (function(){
-  if(localStorage.getItem("ss33_vu04")!=="1"){
+  if(localStorage.getItem("ss33_vu05")!=="1"){
     setTimeout(function(){document.getElementById("vu").classList.add("show")},600);
   }
 })();
