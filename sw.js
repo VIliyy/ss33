@@ -1,5 +1,5 @@
-﻿// 三三复制 - Service Worker
-var CACHE = "ss33-v3";
+// 三三复制 - Service Worker v4
+var CACHE = "ss33-v4";
 var URLS = [
   ".",
   "index.html",
@@ -9,17 +9,10 @@ var URLS = [
 ];
 
 self.addEventListener("install", function(e) {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE).then(function(c) {
       return c.addAll(URLS);
-    })
-  );
-});
-
-self.addEventListener("fetch", function(e) {
-  e.respondWith(
-    caches.match(e.request).then(function(r) {
-      return r || fetch(e.request);
     })
   );
 });
@@ -31,6 +24,20 @@ self.addEventListener("activate", function(e) {
         keys.filter(function(k) { return k !== CACHE; })
             .map(function(k) { return caches.delete(k); })
       );
+    }).then(function() {
+      return self.clients.claim();
+    })
+  );
+});
+
+self.addEventListener("fetch", function(e) {
+  e.respondWith(
+    fetch(e.request).then(function(res) {
+      var clone = res.clone();
+      caches.open(CACHE).then(function(c) { c.put(e.request, clone); });
+      return res;
+    }).catch(function() {
+      return caches.match(e.request);
     })
   );
 });
