@@ -337,7 +337,7 @@ input:checked+.slider:before{
 </div>
 </div>
 </div>
-<div style="text-align:center;padding:2px 0 4px;font-size:9px;color:var(--muted);opacity:.7">v0.5</div>
+<div style="text-align:center;padding:2px 0 4px;font-size:9px;color:var(--muted);opacity:.7">v0.6</div>
 
 <div class="bd" id="bd" onclick="unsel(event)"></div>
 
@@ -366,12 +366,12 @@ input:checked+.slider:before{
 
 <div class="mo" id="vu">
 <div class="ms">
-<h3>  v0.5 更新内容</h3>
+<h3>  v0.6 更新内容</h3>
 <ul class="vu-notes">
-<li>修复垂直方向无法上下滑动的问题</li>
-<li>第3层起改为横向滑动翻页，每组3人一页，避免人群密集</li>
-<li>新增组间圆点导航，当前所在组一目了然</li>
-<li>整体保持 neumorphic 视觉风格</li>
+<li>层级Tab切换：点击Tab直达任意层级，每层徽标显示已填/总人数</li>
+<li>父子高亮：点击某人自动跳至下层并高亮其3个下级</li>
+<li>面包屑导航：显示当前层级路径，点击可回溯</li>
+<li>底部统计栏：实时显示总录入人数与最大层级</li>
 </ul>
 <label class="vu-chk"><input type="checkbox" id="vu-ck" onchange="vuck()"> 不再显示此更新提示</label>
 <div class="ba"><button class="b2" onclick="vucl()">知道了</button></div>
@@ -841,7 +841,7 @@ document.getElementById("bm").addEventListener("click",function(e){if(e.target==
 
 function vuck(){}function vucl(){
   var ck=document.getElementById("vu-ck");
-  if(ck&&ck.checked)localStorage.setItem("ss33_vu05","1");
+  if(ck&&ck.checked)localStorage.setItem("ss33_vu06","1");
   document.getElementById("vu").classList.remove("show");
 }
 (function(){
